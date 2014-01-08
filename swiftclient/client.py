@@ -1056,7 +1056,7 @@ class Connection(object):
 
     def __init__(self, authurl=None, user=None, key=None, retries=5,
                  preauthurl=None, preauthtoken=None, snet=False,
-                 starting_backoff=1, max_backoff=64, tenant_name=None,
+                 starting_backoff=1, backoff_multiplier=2, max_backoff=64, tenant_name=None,
                  os_options=None, auth_version="1", cacert=None,
                  insecure=False, ssl_compression=True,
                  retry_on_ratelimit=False):
@@ -1100,6 +1100,7 @@ class Connection(object):
         self.attempts = 0
         self.snet = snet
         self.starting_backoff = starting_backoff
+        self.backoff_multiplier = backoff_multiplier
         self.max_backoff = max_backoff
         self.auth_version = auth_version
         self.os_options = os_options or {}
@@ -1189,7 +1190,7 @@ class Connection(object):
                     logger.exception(err)
                     raise
             sleep(backoff)
-            backoff = min(backoff * 2, self.max_backoff)
+            backoff = min(backoff * self.backoff_multiplier, self.max_backoff)
             if reset_func:
                 reset_func(func, *args, **kwargs)
 
