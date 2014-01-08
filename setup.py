@@ -18,5 +18,9 @@
 import setuptools
 
 setuptools.setup(
+    name='Python-SwiftClient',
+    version='1.8.1',
+    packages=['swiftclient'],
+    include_package_data=True,
     setup_requires=['pbr'],
     pbr=True)
