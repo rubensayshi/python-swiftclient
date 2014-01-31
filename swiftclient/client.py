@@ -783,7 +783,7 @@ def get_object(url, token, container, name, http_conn=None,
     return parsed_response['headers'], object_body
 
 
-def head_object(url, token, container, name, http_conn=None):
+def head_object(url, token, container, name, http_conn=None, supress_404=False):
     """
     Get object info
 
@@ -793,8 +793,10 @@ def head_object(url, token, container, name, http_conn=None):
     :param name: object name to get info for
     :param http_conn: HTTP connection object (If None, it will create the
                       conn object)
+    :param supress_404: instead of raising a ClientException when a 404 happens
+                        we accept it as a valid response with the result being None returned
     :returns: a dict containing the response's headers (all header names will
-              be lowercase)
+              be lowercase) or None when the object doesn't exist
     :raises ClientException: HTTP HEAD request failed
     """
     if http_conn:
@@ -809,7 +811,9 @@ def head_object(url, token, container, name, http_conn=None):
     body = resp.read()
     http_log(('%s%s' % (url.replace(parsed.path, ''), path), method,),
              {'headers': headers}, resp, body)
-    if resp.status < 200 or resp.status >= 300:
+    if resp.status == 404 and supress_404:
+        return None
+    elif resp.status < 200 or resp.status >= 300:
         raise ClientException('Object HEAD failed', http_scheme=parsed.scheme,
                               http_host=conn.host, http_port=conn.port,
                               http_path=path, http_status=resp.status,
@@ -1244,9 +1248,9 @@ class Connection(object):
         return self._retry(None, delete_container, container,
                            response_dict=response_dict)
 
-    def head_object(self, container, obj):
+    def head_object(self, container, obj, supress_404=False):
         """Wrapper for :func:`head_object`"""
-        return self._retry(None, head_object, container, obj)
+        return self._retry(None, head_object, container, obj, supress_404=supress_404)
 
     def get_object(self, container, obj, resp_chunk_size=None,
                    query_string=None, response_dict=None, headers=None):
